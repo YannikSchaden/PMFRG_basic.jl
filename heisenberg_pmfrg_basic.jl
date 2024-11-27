@@ -1,5 +1,4 @@
 
-
 ## auxiliary functions
 using RecursiveArrayTools
 
@@ -668,9 +667,8 @@ end
 
 ## Execution Dimer Susc
 
-using SpinFRGLattices,OrdinaryDiffEq,DiffEqCallbacks,RecursiveArrayTools,StructArrays
+using SpinFRGLattices, OrdinaryDiffEq, CairoMakie
 using SpinFRGLattices.StaticArrays
-using CairoMakie
 
 System = getPolymer(2) # create a structure that contains all information about the geometry of the problem. 
 
@@ -683,7 +681,7 @@ Par = Params( #create a group of all parameters to pass them to the FRG Solver
     accuracy = 1e-5,
 )
 
-@time sol = SolveFRG(Par,method = DP5());
+@time sol = SolveFRG(Par);
 
 
 ## Evaluation Dimer Susc
@@ -700,13 +698,9 @@ fig
 
 ## T sweep Dimer
 
-using SpinFRGLattices,OrdinaryDiffEq,DiffEqCallbacks,RecursiveArrayTools,StructArrays
-using SpinFRGLattices.StaticArrays
-using CairoMakie
-
 System = getPolymer(2) # create a structure that contains all information about the geometry of the problem. 
 
-Trange = 0.1:0.1:2.5
+Trange = 0.1:0.1:0.7
 f = []
 
 for T in Trange
@@ -740,7 +734,7 @@ function av(array::Array)
 end
 
 ## computation e and c
-Tvals = [i for i in 0.1:0.1:2.5]
+Tvals = collect(Trange)
 e = av(f) - av(Tvals).*discD(Tvals,f)
 c = discD(Tvals[2:end-1],e)
 
@@ -763,18 +757,8 @@ fig
 
 
 
-
-
-
-
-
-
-
-
 ## Execution Square lattice
 
-using SpinFRGLattices,OrdinaryDiffEq,DiffEqCallbacks,RecursiveArrayTools,StructArrays
-using SpinFRGLattices.StaticArrays
 using SpinFRGLattices.SquareLattice
 
 NLen = 5 # Number of nearest neighbor bonds up to which correlations are treated in the lattice. For NLen = 5, all correlations C_{ij} are zero if sites i and j are separated by more than 5 nearest neighbor bonds.
@@ -799,11 +783,9 @@ Par = Params( #create a group of all parameters to pass them to the FRG Solver
 
 ## Evaluation Square lattice
 
-@time begin
-    
-    using PMFRGEvaluation
-    using CairoMakie #for plotting. You can use whatever plotting package you like of course
+using FRGLatticeEvaluation
 
+@time begin
     System = SquareLattice.getSquareLattice(NLen)
     Lattice = LatticeInfo(System,SquareLattice)
     let 
@@ -815,79 +797,11 @@ Par = Params( #create a group of all parameters to pass them to the FRG Solver
         
         chik = [chi(x,y) for x in k, y in k]
         
-        fig, ax, hm = heatmap(k,k,chik,axis = (;aspect = 1))
-        Colorbar(fig[1,2],hm)
+        fig, ax, hm = heatmap(k,k,chik,axis = (;aspect = 1, title = L"\text{Susceptibility } χ(k_x,k_y)", xlabel = L"k_x", ylabel = L"k_y"))
+        Colorbar(fig[1,2],hm, tellheight = true)
+        colsize!(fig.layout, 1, Aspect(1, 1.0))
         fig
     end
-
 end
 
 
-
-
-
-
-
-
-
-
-
-## CHECK SYMMETRIES
-
-gamma,Va,Vb,Vc = sol[end].x[2],sol[end].x[3],sol[end].x[4],sol[end].x[5]
-
-function iszero(M::Array)
-    for i in round.(M, digits = 15)
-        if i != 0.0
-            prinln("IS NOT ZERO")
-        else
-        end
-    end
-
-    return res
-end
-
-##
-
-sol[5].x[2]
-
-##
-
-sol.t
-
-##
-
-
-## Γc_ii(s,t,u) = - Γb_ii(t,s,u)
-
-for i in 1:Par.System.Npairs
-    println("
-Pair: ", Par.System.PairList[i])
-    for j in 1:Par.NumericalParams.N
-        println(iszero(Vc[i,:,:,j]+transpose(Vb[i,:,:,j])))
-    end
-end
-
-## Γc_ij(s,u,t) = (- Γa_ij + Γb_ij + Γc_ij)(s,t,u)
-
-for Rij in 1:Par.System.Npairs
-    println("
-Pair: ", Par.System.PairList[Rij])
-    for s in 1:Par.NumericalParams.N
-        println(iszero(transpose(Vc[Rij,s,:,:])+Va[Rij,s,:,:]-Vb[Rij,s,:,:]-Vc[Rij,s,:,:]))
-    end
-end
-
-## Γa_ij(s,t,u) = Γa_ij(t,s,u) = Γa_ij(s,t,u) = 
-
-iszero(Va[1,:,:,1] + transpose(Va[1,:,:,1]))
-iszero(Va[1,:,1,:] + transpose(Va[1,:,1,:]))
-iszero(Va[1,1,:,:] + transpose(Va[1,1,:,:]))
-
-##
-
-Vb[1,:,:,1] + transpose(Vb[1,:,:,1])
-
-## (1,2) <-> (3,4)
-
-println(iszero(round.(Va[1,:,1,:] - transpose(Va[1,:,1,:]), digits = 15)))
