@@ -1,2 +1,2 @@
 # PMFRG_basic.jl
-Simplified PMFRG code
+Simplified PMFRG code for isotropic interactions and Lambda flow.
